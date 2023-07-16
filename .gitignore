@@ -1,0 +1,9 @@
+
+# no cmake files
+**/CMakeFiles
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/Makefile
+
+# removing the bin executables
+bin/
