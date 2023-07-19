@@ -2,3 +2,11 @@ find_package(Catch2 3 REQUIRED)
 
 add_executable(tests test.cpp)
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
+
+set (SOURCE_DIR ../src/)
+target_sources(tests
+    PRIVATE "${SOURCE_DIR}capture_group.cpp"
+    PRIVATE "${SOURCE_DIR}machine_factory.cpp"
+    PRIVATE "${SOURCE_DIR}regex.cpp"
+    PRIVATE "${SOURCE_DIR}state_machine.cpp"
+)
