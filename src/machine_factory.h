@@ -7,11 +7,10 @@
 class StateMachineFactory {
 public:
     // creates state machines
-    StateMachine match_characters(std::string chars);
+    StateMachine match_characters(const std::string& chars);
     StateMachine match_dot();
-private:
-    // helper functions
     StateMachine match_char(char c);
+private:
 };
 
 #endif

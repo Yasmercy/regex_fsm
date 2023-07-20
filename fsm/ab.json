@@ -1,0 +1,46 @@
+{
+    "fail_state": -2,
+    "match_all_transitions": [
+        [
+            0,
+            0
+        ],
+        [
+            1,
+            1
+        ]
+    ],
+    "num_states": 1,
+    "start_state": 0,
+    "success_state": -1,
+    "transition": [
+        [
+            [
+                0,
+                0
+            ],
+            -2
+        ],
+        [
+            [
+                0,
+                97
+            ],
+            1
+        ],
+        [
+            [
+                1,
+                0
+            ],
+            -2
+        ],
+        [
+            [
+                1,
+                98
+            ],
+            -1
+        ]
+    ]
+}

@@ -4,7 +4,7 @@ using State = int;
 using Action = int;
 using Token = char;
 
-StateMachine::StateMachine() : start_state(0), success_state(-1), fail_state(-2), num_states(1) {}
+StateMachine::StateMachine() : start_state(0), success_state(-1), fail_state(-2), num_states(0) {}
 
 StateMachine::StateMachine(unsigned int num_states) : start_state(0), success_state(-1), fail_state(-2), num_states(num_states) {}
 
@@ -58,20 +58,8 @@ int StateMachine::get_num_states() {
 
 void StateMachine::append(const StateMachine& other) {
     // this just maps all the success states of this to the start of other
-    
-    // remap all states in other (+ this.num_states) (except for success and fail)
-    for (const auto& ele : other.transition) {
-        auto [start, action] = ele.first;
-        auto end = ele.second;
-
-        if (start != success_state && start != fail_state) {
-            // excluded success and end
-            start += num_states;
-        }
-        // add from other onto this transition
-        transition[{start, action}] = end;
-    }
-    // change all success endpoints of this to new start
+    ++num_states; 
+    // connect all success endpoints to the other's start
     for (const auto& ele : transition) {
         auto [start, action] = ele.first;
         auto end = ele.second;
@@ -79,8 +67,30 @@ void StateMachine::append(const StateMachine& other) {
             transition[{start, action}] = num_states;
         }
     }
-    // update number of states
-    num_states += other.num_states;
+    for (const auto& ele : match_all_transitions) {
+        auto start = ele.first;
+        auto end = ele.second;
+        if (end == success_state) {
+            match_all_transitions[start] = num_states;
+        }
+    }
+    
+    // remap all nodes in other to new nodes in this
+    // exclude the terminal nodes in other (success and fail)
+    for (const auto& ele : other.transition) {
+        auto [start, action] = ele.first;
+        auto end = ele.second;
+        start += num_states;
+        end += num_states * (end != success_state && end != fail_state);
+        transition[{start, action}] = end;
+    }
+    for (const auto& ele : other.match_all_transitions) {
+        auto start = ele.first;
+        auto end = ele.second;
+        start += num_states;
+        end += num_states * (end != success_state && end != fail_state);
+        match_all_transitions[start] = end;
+    }
 }
 
 bool StateMachine::valid_state(State state) {

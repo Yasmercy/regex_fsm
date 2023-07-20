@@ -1,2 +1,10 @@
 
 add_executable(main main.cpp)
+
+set (SOURCE_DIR ./)
+target_sources(main
+    PRIVATE "${SOURCE_DIR}capture_group.cpp"
+    PRIVATE "${SOURCE_DIR}machine_factory.cpp"
+    PRIVATE "${SOURCE_DIR}regex.cpp"
+    PRIVATE "${SOURCE_DIR}state_machine.cpp"
+)

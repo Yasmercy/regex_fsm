@@ -11,9 +11,19 @@ StateMachine Factory::match_char(char c) {
     return m;
 }
 
-StateMachine Factory::match_characters(std::string chars) {
-    StateMachine m;
+StateMachine Factory::match_characters(const std::string& chars) {
+    if (chars.empty()) {
+        StateMachine m;
+        return m;
+    }
+
+    StateMachine m = match_char(chars[0]);
+    bool first_flag = true;
     for (char c : chars) {
+        if (first_flag) {
+            first_flag = false;
+            continue;
+        }
         m.append(match_char(c));
     }
 

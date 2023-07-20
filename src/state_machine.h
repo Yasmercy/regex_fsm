@@ -1,6 +1,7 @@
 #ifndef STATE_MACHINE_H
 #define STATE_MACHINE_H
 
+#include "../inc/json.hpp"
 #include <map>
 #include <utility>
 #include <vector>
@@ -34,6 +35,17 @@ public:
     // a state machine that matches b becomes a machine that matches ab
     void append(const StateMachine& other);
     bool valid_state(State state);
+
+    // for json conversions
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(
+        StateMachine, 
+        transition, 
+        match_all_transitions, 
+        start_state, 
+        success_state, 
+        fail_state, 
+        num_states
+    )
 private:
     // maps a tuple of state and action to a new state
     std::map<std::pair<State, Token>, State> transition;
