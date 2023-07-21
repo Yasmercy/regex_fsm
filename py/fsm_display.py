@@ -1,5 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+import numpy as np
 import json
 
 def read_json(filename):
@@ -12,36 +13,25 @@ def parse_json(j):
     fail = j["fail_state"]
     start = j["start_state"]
 
-    nodes = set(range(1, j["num_states"])).union({success, fail, start})
+    nodes = set(range(-2, j["num_states"] + 1))
     edges = {tuple(k) : v for [k, v] in j["transition"]}
-    edges_start = {data: start for data in j["to_start"]}
-    else_edges = {k : v for (k, v) in j["match_all_transitions"]} 
-    
-    return nodes, edges, else_edges
+    return nodes, edges
 
-def draw_graph(nodes, edges, else_edges):
+def draw_graph(nodes, edges):
     """ Returns a nx.DiGraph() object with the nodes and edges (as well as some labels) """
-    def parse_actions_into_name(action_set):
-        return "|".join(map(str, action_set))
-    # parse the edges into the following format:
-    # dict[(start, end) : {actions}]
-    # the else_edge action is called 'else'
-    E = {(k[0], v) : set() for k, v in edges.items()}
-    for k, v in edges.items():
-        E[(k[0], v)].add(k[1])
-    for k, v in else_edges.items():
-        E[(k, v)] = E.get((k, v), set())
-        E[(k, v)].add("else")
+    # key=start, value=end
     # add the proper labels for the edges
-    E_labels = {k:parse_actions_into_name(v) for k, v in E.items()}
+    E_labels = {(k[0], v) : k[1] for k, v in edges.items()}
     
     # create the graph
     G = nx.DiGraph()
     G.add_nodes_from(nodes)
-    G.add_edges_from(E.keys())
+    G.add_edges_from(E_labels.keys())
     # draw the graph
-    nx.draw_networkx(G, pos=nx.kamada_kawai_layout(G), arrows=True)
-    nx.draw_networkx_edge_labels(G, pos=nx.kamada_kawai_layout(G), edge_labels=E_labels, font_color="black")
+    pos = nx.kamada_kawai_layout(G)
+    # remove overlapping pos
+    nx.draw_networkx(G, pos=pos, connectionstyle='arc3, rad = 0.1', arrows=True, with_labels=True)
+    nx.draw_networkx_edge_labels(G, pos=pos, edge_labels=E_labels, label_pos=0.8, font_size=8) 
     return G
 
 def show_graph():
@@ -50,7 +40,7 @@ def show_graph():
     plt.show()
 
 def main():
-    data = read_json("fsm/ab.json")
+    data = read_json("fsm/abc.json")
     parsed = parse_json(data)
     graph = draw_graph(*parsed)
     show_graph()

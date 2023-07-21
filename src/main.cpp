@@ -6,11 +6,12 @@
 // creating a machine that matches abc and converting to json
 void write_abc() {
     StateMachineFactory factory;
-    auto fsm = factory.match_characters("ab");
+    std::string chars = "abc";
+    auto fsm = factory.match_characters(chars);
     nlohmann::json j = fsm;
 
     // writing the file
-    std::string filename = "fsm/ab.json";
+    std::string filename = "fsm/" + chars + ".json";
     std::ofstream ofs(filename);
     ofs << std::setw(4) << j << std::endl;
 }
