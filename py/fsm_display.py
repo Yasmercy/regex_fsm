@@ -14,6 +14,7 @@ def parse_json(j):
 
     nodes = set(range(1, j["num_states"])).union({success, fail, start})
     edges = {tuple(k) : v for [k, v] in j["transition"]}
+    edges_start = {data: start for data in j["to_start"]}
     else_edges = {k : v for (k, v) in j["match_all_transitions"]} 
     
     return nodes, edges, else_edges
@@ -39,8 +40,8 @@ def draw_graph(nodes, edges, else_edges):
     G.add_nodes_from(nodes)
     G.add_edges_from(E.keys())
     # draw the graph
-    nx.draw_networkx(G, pos=nx.circular_layout(G), arrows=True)
-    nx.draw_networkx_edge_labels(G, pos=nx.circular_layout(G), edge_labels=E_labels, font_color="black")
+    nx.draw_networkx(G, pos=nx.kamada_kawai_layout(G), arrows=True)
+    nx.draw_networkx_edge_labels(G, pos=nx.kamada_kawai_layout(G), edge_labels=E_labels, font_color="black")
     return G
 
 def show_graph():

@@ -12,6 +12,10 @@ void StateMachine::add_transition(State start, Token token, State end) {
     transition[{start, token}] = end;
 }
 
+void StateMachine::add_start_transition(State start, Token token) {
+    add_transition(start, token, start_state);
+}
+
 void StateMachine::add_success(State start, Token token) {
     add_transition(start, token, success_state);
 }
@@ -37,7 +41,12 @@ State StateMachine::get_success() {
 }
 
 State StateMachine::next_state(const State& start, const Token& token) {
-    return transition[{start, token}];
+    if (transition.contains({start, token})) {
+        return transition[{start, token}];
+    } else if (to_start.contains({start, token})) {
+        return start_state;
+    }
+    return match_all_transitions[start]; // can error
 }
 
 State StateMachine::get_output(const State& start, const std::vector<Token>& tokens) {
@@ -58,7 +67,7 @@ int StateMachine::get_num_states() {
 
 void StateMachine::append(const StateMachine& other) {
     // this just maps all the success states of this to the start of other
-    ++num_states; 
+    ++num_states;
     // connect all success endpoints to the other's start
     for (const auto& ele : transition) {
         auto [start, action] = ele.first;
@@ -76,7 +85,7 @@ void StateMachine::append(const StateMachine& other) {
     }
     
     // remap all nodes in other to new nodes in this
-    // exclude the terminal nodes in other (success and fail)
+    // exclude the special nodes in other (success and fail)
     for (const auto& ele : other.transition) {
         auto [start, action] = ele.first;
         auto end = ele.second;
@@ -91,10 +100,15 @@ void StateMachine::append(const StateMachine& other) {
         end += num_states * (end != success_state && end != fail_state);
         match_all_transitions[start] = end;
     }
+
+    // add the other start states to this
+    for (const auto& [start, token] : other.to_start) {
+        to_start.insert({start + num_states, token});
+    }
 }
 
 bool StateMachine::valid_state(State state) {
     // TODO fix (-2 <= state < num_states)
     int N = num_states;
-    return (-2 <= state) && (state < N);
+    return (-2 <= state) && (state <= N);
 }

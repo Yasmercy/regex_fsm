@@ -3,6 +3,7 @@
 
 #include "../inc/json.hpp"
 #include <map>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -18,6 +19,7 @@ public:
     void add_transition(State start, Token token, State end);
     void add_success(State start, Token token);
     void add_failure(State start, Token token);
+    void add_start_transition(State start, Token token);
     void increase_num_states(int new_num_states); // must be >= current 
     // this matches all tokens (but is least priority)
     void add_match_all_transition(State start, State end);
@@ -39,7 +41,8 @@ public:
     // for json conversions
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(
         StateMachine, 
-        transition, 
+        transition,
+        to_start,
         match_all_transitions, 
         start_state, 
         success_state, 
@@ -49,6 +52,7 @@ public:
 private:
     // maps a tuple of state and action to a new state
     std::map<std::pair<State, Token>, State> transition;
+    std::set<std::pair<State, Token>> to_start;
     std::map<State, State> match_all_transitions;
     // important states
     State start_state; // starting state

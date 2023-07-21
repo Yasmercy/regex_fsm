@@ -9,11 +9,13 @@ TEST_CASE ("matching patterns of only a-Z", "[RegEx]") {
     Result r3 = regex.match("abc");
     Result r4 = regex.match("xabc");
     Result r5 = regex.match("aBc");
+    Result r6 = regex.match("acbc");
     
     // checking which expressions matched
     REQUIRE (!r1.matched);
     REQUIRE (!r2.matched);
     REQUIRE (!r5.matched);
+    REQUIRE (!r6.matched);
     REQUIRE (r3.matched);
     REQUIRE (r4.matched);
 }

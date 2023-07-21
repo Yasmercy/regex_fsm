@@ -7,7 +7,8 @@ StateMachine Factory::match_char(char c) {
     StateMachine m;
     m.add_success(m.get_start(), c);
     m.add_failure(m.get_start(), END_CHAR);
-    m.add_match_all_transition(m.get_start(), m.get_start());
+    // m.add_match_all_transition(m.get_start(), m.get_start());
+    m.add_start_transition(m.get_start(), 'x');
     return m;
 }
 
