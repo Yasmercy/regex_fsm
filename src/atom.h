@@ -20,6 +20,9 @@ public:
     
     // modifier
     void append(const Atom& other);
+
+    // getter
+    std::set<Token> get_tokens() const;
 private:
     Atom() = default;
     std::set<Token> tokens;

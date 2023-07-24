@@ -9,16 +9,11 @@ class StateMachineFactory {
 public:
     StateMachine match_pattern(const Pattern& pattern);
     // creates state machines
-    StateMachine match_characters(const std::string& chars);
-    StateMachine match_char(const char& c);
     StateMachine success_machine();
+    StateMachine match_atom(const Atom& atom);
 
 private:
-    void append_char(StateMachine& m, const char& c);
-    void append_range(StateMachine& m, const char& start, const char& end);
-    void append_dot(StateMachine& m);
-    void append_alphanumeric(StateMachine& m);
-
+    void append_atom(StateMachine& m, const Atom& atom);
     void post_modification(StateMachine& m, const Pattern& pattern);
     // machines need to connect to the second state
     // for example, ab("aab")

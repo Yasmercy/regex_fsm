@@ -6,47 +6,29 @@ using Machine = StateMachine;
 char END_CHAR = '\0';
 
 Machine Factory::match_pattern(const Pattern& pattern) {
-    // do some tokenizing here
-    // make dict that maps token range to an append function
-    
-    // temp:
-    return match_characters(pattern.pattern);
-}
-
-Machine Factory::match_characters(const std::string& chars) {
-    if (chars.empty()) {
-        Machine m = success_machine();
-        return m;
+    if (pattern.atoms.empty()) {
+        return success_machine();
     }
-    Machine m = match_char(chars[0]);
-    for (long unsigned int i = 1; i < chars.size(); ++i) {
-        if (chars[i] == '?') {
-            continue;
-        }
-        append_char(m, chars[i]);
+    Machine m = match_atom(pattern.atoms[0]);
+    for (long unsigned int i = 1; i < pattern.atoms.size(); ++i) {
+        append_atom(m, pattern.atoms[i]);
     }
-    Pattern p {chars};
-    post_modification(m, p);
     return m;
 }
 
-Machine Factory::match_char(const char& c) {
+Machine Factory::match_atom(const Atom& atom) {
     Machine m;
-    m.add_transition(m.get_start(), c, m.get_success());
     m.add_transition(m.get_start(), END_CHAR, m.get_failure());
     m.add_transition(m.get_start(), m.get_else_action(), 0);
+    for (char c : atom.get_tokens()) {
+        m.add_transition(m.get_start(), c, m.get_success());
+    }
     return m;
 }
-
-Machine Factory::success_machine() {
-    Machine m;
-    m.add_transition(m.get_start(), m.get_else_action(), m.get_success());
-    return m;
-}
-
-void Factory::append_char(Machine& m, const char& c) {
+void Factory::append_atom(Machine& m, const Atom& atom) {
     // add another state
     m.increase_num_states_by(1);
+
     // map all previous success endpoints to new state
     for (auto& [key, endpoint] : m.get_transition()) {
         auto [start, token] = key;
@@ -55,12 +37,22 @@ void Factory::append_char(Machine& m, const char& c) {
             m.add_transition(start, token, m.get_num_states());
         }
     }
-    // success condition
-    m.add_transition(m.get_num_states(), c, m.get_success());
+    
     // fail condition
     m.add_transition(m.get_num_states(), END_CHAR, m.get_failure());
     // loop back to start if fail 
     m.add_transition(m.get_num_states(), m.get_else_action(), m.get_start());
+    // success condition
+    for (char c : atom.get_tokens()) {
+        m.add_transition(m.get_num_states(), c, m.get_success());
+    }
+}
+
+Machine Factory::success_machine() {
+
+    Machine m;
+    m.add_transition(m.get_start(), m.get_else_action(), m.get_success());
+    return m;
 }
 
 void Factory::make_optional(StateMachine& m, int state) {

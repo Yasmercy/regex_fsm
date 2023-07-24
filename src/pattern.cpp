@@ -98,8 +98,12 @@ void Pattern::set_atoms(const std::vector<std::string>& tokens) {
             atoms.push_back(Atom {'?'});
         } else if (token == "\$") {
             atoms.push_back(Atom {'$'});
-        } 
-        // deal with ranges now
+        } else if (false) {
+            // deal with ranges
+        } else {
+            // the token is just a char
+            atoms.push_back(Atom {token[0]});
+        }
     }
 }
 

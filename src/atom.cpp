@@ -55,3 +55,7 @@ void Atom::insert_range(Token start, Token end) {
         tokens.insert(s);
     }
 }
+
+std::set<Token> Atom::get_tokens() const {
+    return tokens;
+}

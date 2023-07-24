@@ -12,19 +12,19 @@ enum Modifier {
     NONE
 };
 
-class Pattern {
-public:
+struct Pattern {
+    // constructor
     Pattern(std::string pattern);
-    std::string pattern;
     
     // helper functions
     static std::vector<std::string> group_tokens(std::string pattern);
     void set_modified_atoms(std::vector<std::string>& tokens);
     void set_atoms(const std::vector<std::string>& tokens);
-private:
+
+    // public members
+    std::string pattern;
     std::vector<Atom> atoms;
     std::vector<Modifier> modifiers;
-
 };
 
 
