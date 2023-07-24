@@ -7,4 +7,6 @@ target_sources(main
     PRIVATE "${SOURCE_DIR}machine_factory.cpp"
     PRIVATE "${SOURCE_DIR}regex.cpp"
     PRIVATE "${SOURCE_DIR}state_machine.cpp"
+    PRIVATE "${SOURCE_DIR}atom.cpp"
+    PRIVATE "${SOURCE_DIR}pattern.cpp"
 )

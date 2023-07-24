@@ -4,7 +4,6 @@
 RegEx::RegEx(std::string pat) : pattern(Pattern {pat}) {
     StateMachineFactory factory;
     m = factory.match_pattern(pattern);
-    
 }
 
 Result RegEx::match(std::string expr) {

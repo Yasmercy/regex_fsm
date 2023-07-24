@@ -38,7 +38,7 @@ TEST_CASE ("matching patterns of only 0-9", "[RegEx]") {
     REQUIRE (r4.matched);
 }
 
-TEST_CASE ("matching patterns with optional characters", "[RegEx, Optional]") {
+TEST_CASE ("matching patterns with optional characters", "[RegEx]") {
     RegEx regex("a?bc");
     Result r1 = regex.match("abc");
     Result r2 = regex.match("bc");
@@ -123,5 +123,20 @@ TEST_CASE ("matching patterns with special charcters", "[RegEx]") {
     // // checking which expressions matched
     // REQUIRE (!r1.matched);
     // REQUIRE (r2.matched);
+}
+
+TEST_CASE ("pattern tokenizing", "[group_tokens]") {
+    std::string pattern = "x\d?x[abc]x(a|bc)xa+";
+    std::vector<std::string> sols = {
+        "x",
+        "\d?",
+        "x",
+        "[abc]",
+        "x",
+        "(a|bc)",
+        "x",
+        "a+"
+    };
+    REQUIRE (Pattern::group_tokens(pattern) == sols);
 }
 
