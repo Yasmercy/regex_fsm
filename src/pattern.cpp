@@ -3,7 +3,8 @@
 using Token = char;
 
 Pattern::Pattern(std::string pattern) : pattern(pattern) {
-    auto vec = group_tokens(pattern);
+    auto grouped = group_tokens(pattern);
+    auto vec = extend_repeated_tokens(grouped);
     set_modified_atoms(vec);
     set_atoms(vec);
 }
@@ -68,10 +69,7 @@ void Pattern::set_modified_atoms(std::vector<std::string>& tokens) {
             modifiers[i] = Modifier::OPTIONAL;
         } else if (tokens[i].back() == '*') {
             tokens[i].pop_back();
-            modifiers[i] = Modifier::REPEATED_S;
-        } else if (tokens[i].back() == '+') {
-            tokens[i].pop_back();
-            modifiers[i] = Modifier::REPEATED_P;
+            modifiers[i] = Modifier::REPEATED;
         }
     }
 }
@@ -98,6 +96,10 @@ void Pattern::set_atoms(const std::vector<std::string>& tokens) {
             atoms.push_back(Atom {'?'});
         } else if (token == "\$") {
             atoms.push_back(Atom {'$'});
+        } else if (token == "\^") {
+            atoms.push_back(Atom {'^'});
+        } else if (token == "\\") {
+            atoms.push_back(Atom {'\\'});
         } else if (false) {
             // deal with ranges
         } else {
@@ -107,6 +109,45 @@ void Pattern::set_atoms(const std::vector<std::string>& tokens) {
     }
 }
 
-// todo snippets
-// const reference
-// vector
+std::vector<std::string> Pattern::extend_repeated_tokens(
+        const std::vector<std::string>& tokens) {
+    // change all x+ to xx*
+    // repeat all {m,n} repetitions: x{m,n} = x{m}[x]{n-m}
+    std::vector<std::string> out;
+    for (auto token : tokens) {
+        if (token.back() == '+') {
+            // make a copy of token without the +
+            auto cp = token;
+            cp.pop_back();
+            // add cp and cp*
+            out.push_back(cp);
+            out.push_back(cp + "*");
+        } else if (token.front() == '{' && token.back() == '}' && !out.empty()) {
+            // if it has 2 indices
+            auto index = token.find(",");
+            if (index != std::string::npos) {
+                int m = std::stoi(token.substr(1, index));
+                int n = std::stoi(token.substr(index + 1, token.size() - 1));
+                // make m copies of the last item (loop m-1 times)
+                for (int i = 1; i < m; ++i) {
+                    out.push_back(out.back());
+                }
+                // make n-m copies of the last item + ? (loop n-m times)
+                auto last = out.back() + "?";
+                for (int i = 0; i < n-m; ++i) {
+                    out.push_back(last);
+                }
+            }
+            // if it has 1 index
+            // the number would be the enitre substring inside brackets
+            int num = std::stoi(token.substr(1, token.size() - 2));
+            // make num copies of the last item (loop num-1 times)
+            for (int i = 1; i < num; ++i) {
+                out.push_back(out.back());
+            }
+        } else {
+            out.push_back(token);
+        }
+    }
+    return out;
+}

@@ -64,6 +64,7 @@ TEST_CASE ("matching patterns with optional characters", "[RegEx]") {
     Result r14 = regex3.match("bc");
     Result r15 = regex3.match("ac");
     Result r16 = regex3.match("ab");
+    Result r17 = regex3.match("c");
     
     REQUIRE (r1.matched);
     REQUIRE (r2.matched);
@@ -74,6 +75,7 @@ TEST_CASE ("matching patterns with optional characters", "[RegEx]") {
     REQUIRE (r13.matched);
     REQUIRE (r14.matched);
     REQUIRE (r15.matched);
+    REQUIRE (r17.matched);
     REQUIRE (!r3.matched);
     REQUIRE (!r4.matched);
     REQUIRE (!r6.matched);
@@ -113,7 +115,15 @@ TEST_CASE ("matching patterns with ranges", "[RegEx]") {
 }
 
 TEST_CASE ("matching patterns with repetitions", "[RegEx]") {
+    RegEx regex("z{3}");
 
+    Result r1 = regex.match("wazup");
+    Result r2 = regex.match("wazzzup");
+    Result r3 = regex.match("wazzzzzup");
+
+    REQUIRE (!r1.matched);
+    REQUIRE (r2.matched);
+    REQUIRE (r3.matched);
 }
 
 TEST_CASE ("matching patterns with special charcters", "[RegEx]") {
@@ -140,5 +150,20 @@ TEST_CASE ("pattern tokenizing", "[group_tokens]") {
         "a+"
     };
     REQUIRE (Pattern::group_tokens(pattern) == sols);
+}
+
+TEST_CASE ("repeated tokens", "[repeat_tokens]") {
+    std::vector<std::string> tokens = {
+        "a+",
+        "x", "{1,4}",
+        "y", "{2}"
+    };
+    std::vector<std::string> sol = {
+        "a", "a*",
+        "x", "x?", "x?", "x?", // NOTE THIS DOES NOT WORK
+        "y", "y"
+    };
+
+    REQUIRE (Pattern::extend_repeated_tokens(tokens) == sol);
 }
 

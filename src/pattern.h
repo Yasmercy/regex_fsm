@@ -7,9 +7,8 @@
 
 enum Modifier { 
     NONE,
-    OPTIONAL,   // ?
-    REPEATED_S, // *
-    REPEATED_P, // +
+    OPTIONAL, // ?
+    REPEATED, // *
 };
 
 struct Pattern {
@@ -18,6 +17,7 @@ struct Pattern {
     
     // helper functions
     static std::vector<std::string> group_tokens(std::string pattern);
+    static std::vector<std::string> extend_repeated_tokens(const std::vector<std::string>& tokens);
     void set_modified_atoms(std::vector<std::string>& tokens);
     void set_atoms(const std::vector<std::string>& tokens);
 
