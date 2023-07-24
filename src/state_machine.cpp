@@ -67,6 +67,9 @@ State StateMachine::next_state(const State& start, const Token& token) {
 State StateMachine::get_output(const State& start, const std::vector<Token>& tokens) {
     State current = start;
     for (Token token : tokens) {
+        if (current == success_state || current == fail_state) {
+            break;
+        }
         std::cout << current << "->";
         current = next_state(current, token);
     }
