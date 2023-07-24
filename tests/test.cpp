@@ -11,6 +11,7 @@ TEST_CASE ("matching patterns of only a-Z", "[RegEx]") {
     Result r4 = regex.match("xabc");
     Result r5 = regex.match("aBc");
     Result r6 = regex.match("acbc");
+    Result r7 = regex.match("aabc");
     
     // checking which expressions matched
     REQUIRE (!r1.matched);
@@ -19,6 +20,7 @@ TEST_CASE ("matching patterns of only a-Z", "[RegEx]") {
     REQUIRE (!r6.matched);
     REQUIRE (r3.matched);
     REQUIRE (r4.matched);
+    REQUIRE (r7.matched);
 }
 
 TEST_CASE ("matching patterns of only 0-9", "[RegEx]") {

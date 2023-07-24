@@ -9,10 +9,15 @@ Machine Factory::match_pattern(const Pattern& pattern) {
     if (pattern.atoms.empty()) {
         return success_machine();
     }
+    
+    // add all atoms to the machine
     Machine m = match_atom(pattern.atoms[0]);
     for (long unsigned int i = 1; i < pattern.atoms.size(); ++i) {
         append_atom(m, pattern.atoms[i]);
     }
+    
+    // do the post modification
+    post_modification(m, pattern); 
     return m;
 }
 
@@ -78,27 +83,27 @@ void Factory::make_optional(StateMachine& m, int state) {
 }
 
 void Factory::post_modification(StateMachine& m, const Pattern& pattern) {
-    std::string pat = pattern.pattern;
-    if (pat.size() >= 2) {
-        add_loops_to_second(m, pat[0]);
+    if (pattern.atoms.size() >= 2) {
+        add_loops_to_second(m, pattern.atoms[0]);
     }
     add_all_optional_chars(m, pattern);
 }
 
-void Factory::add_loops_to_second(StateMachine& m, char token) {
+void Factory::add_loops_to_second(StateMachine& m, const Atom& atom) {
     for (int i = 1; i <= m.get_num_states(); ++i) {
-        m.add_transition(i, token, 1);
+        for (char token : atom.get_tokens()) {
+            m.add_transition(i, token, 1);
+        }
     }
 }
 
 void Factory::add_all_optional_chars(StateMachine& m, const Pattern& pattern) {
     // find the positions of all optionals
     // call the make_optional on those states
-    auto pat = pattern.pattern;
-    int counter = 0;
-    for (long unsigned i = 0; i < pat.size(); ++i) {
-        if (pat[i] == '?') {
-            make_optional(m, i - ++counter);
+    auto mods = pattern.modifiers;
+    for (long unsigned i = 0; i < mods.size(); ++i) {
+        if (mods[i] == Modifier::OPTIONAL) {
+            make_optional(m, i);
         }
     }
 }

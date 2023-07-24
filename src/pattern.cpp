@@ -61,7 +61,7 @@ std::vector<std::string> Pattern::group_tokens(std::string pattern) {
 
 void Pattern::set_modified_atoms(std::vector<std::string>& tokens) {
     // removes the modifier from all tokens that have it
-    modifiers.reserve(tokens.size());
+    modifiers.resize(tokens.size());
     for (long unsigned int i = 0; i < tokens.size(); ++i) {
         if (tokens[i].back() == '?') {
             tokens[i].pop_back();

@@ -6,10 +6,10 @@
 #include "atom.h"
 
 enum Modifier { 
+    NONE,
     OPTIONAL,   // ?
     REPEATED_S, // *
     REPEATED_P, // +
-    NONE
 };
 
 struct Pattern {
