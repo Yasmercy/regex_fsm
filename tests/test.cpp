@@ -154,7 +154,15 @@ TEST_CASE ("matching patterns with any non-digit", "[RegEx]") {
 }
 
 TEST_CASE ("matching patterns with any .", "[RegEx]") {
+    RegEx regex("a.c");
 
+    Result r1 = regex.match("abc");
+    Result r2 = regex.match("ac");
+    Result r3 = regex.match("a c");
+
+    REQUIRE (r1.matched);
+    REQUIRE (r3.matched);
+    REQUIRE (!r2.matched);
 }
 
 TEST_CASE ("matching patterns with ranges", "[RegEx]") {
@@ -198,6 +206,13 @@ TEST_CASE ("matching patterns with *", "[RegEx]") {
 }
 
 TEST_CASE ("matching patterns with +", "[RegEx]") {
+    RegEx regex{"ab+"};
+    REQUIRE (!regex.match("a").matched);
+    REQUIRE (regex.match("ab").matched);
+    REQUIRE (regex.match("abbbb").matched);
+    REQUIRE (regex.match("abbc").matched);
+    REQUIRE (!regex.match("ac").matched);   
+    REQUIRE (!regex.match("c").matched);
 
 }
 
