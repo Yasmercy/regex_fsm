@@ -102,24 +102,25 @@ void Factory::post_modification(StateMachine& m, const Pattern& pattern) {
     add_all_optional_chars(m, pattern);
 }
 
-void Factory::add_loops_to_second(StateMachine& m, const Atom& atom) {
-    int i = 1;
-    // exclude ones that have a loop to the next state already
-    if (m.get_num_states()) {
-        bool has_loop_to_next;
-        auto end = (m.get_num_states() == 1) ? m.get_success() : 2;
-        for (auto token : atom.get_tokens()) {
-            auto search = m.get_transition().find({1, token});
-            if (search != m.get_transition().end() && search->second == end) {
-                has_loop_to_next = true;
-                break;
-            }
+bool is_connected(StateMachine& m, int start, int end, const Atom& atom) {
+    auto trans = m.get_transition();
+    for (auto token : atom.get_tokens()) {
+        auto search = trans.find({start, token});
+        if (search != trans.end() && search->second == end) {
+            return true;
         }
-        i += has_loop_to_next;
     }
-    for (;i <= m.get_num_states(); ++i) {
+    return false;
+}
+
+void Factory::add_loops_to_second(StateMachine& m, const Atom& atom) {
+    for (int i = 1; i <= m.get_num_states(); ++i) {
+        auto end = (m.get_num_states() == i) ? m.get_success() : i + 1;
         for (char token : atom.get_tokens()) {
-            m.add_transition(i, token, 1);
+            // exclude ones that are connected to the next
+            if (!is_connected(m, i, end, atom)) {
+                m.add_transition(i, token, 1);
+            }
         }
     }
 }
