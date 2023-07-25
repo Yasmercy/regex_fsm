@@ -11,7 +11,7 @@ Machine Factory::match_pattern(const Pattern& pattern) {
     }
     
     // add all atoms to the machine
-    Machine m = match_atom(pattern.atoms[0]);
+    Machine m = match_atom(pattern.atoms[0], pattern.modifiers[0]);
     for (long unsigned int i = 1; i < pattern.atoms.size(); ++i) {
         if (pattern.modifiers[i] == Modifier::REPEATED) {
             append_repeated_atom(m, pattern.atoms[i]);
@@ -25,12 +25,16 @@ Machine Factory::match_pattern(const Pattern& pattern) {
     return m;
 }
 
-Machine Factory::match_atom(const Atom& atom) {
+Machine Factory::match_atom(const Atom& atom, const Modifier& mod) {
     Machine m;
     m.add_transition(m.get_start(), END_CHAR, m.get_failure());
     m.add_transition(m.get_start(), m.get_else_action(), 0);
     for (char c : atom.get_tokens()) {
         m.add_transition(m.get_start(), c, m.get_success());
+        if (mod == Modifier::REPEATED) {
+            m.add_transition(m.get_num_states(), c, m.get_num_states());
+        }
+        
     }
     return m;
 }
@@ -73,32 +77,35 @@ Machine Factory::success_machine() {
     return m;
 }
 
-void Factory::make_optional(StateMachine& m, int state) {
-    if (state == m.get_num_states()) {
-        m.remove_transition(state, m.get_else_action());
-        m.add_transition(state, m.get_else_action(), m.get_success());
-        m.remove_transition(state, END_CHAR);
-        m.add_transition(state, END_CHAR, m.get_success());
-        return;
+void Factory::make_optional(StateMachine& m, const std::vector<Atom>& atoms, int begin, int end) {
+    // add all forward loop combinations
+    for (int i = begin; i < end; ++i) {
+        for (int j = i + 2; j <= m.get_num_states() + 1; ++j) {
+            // for each combination of states (i, j)
+            // copy the intermediate transitions of (j-1, j)
+            int endpoint = (j > m.get_num_states()) ? m.get_success() : j;
+            auto tokens = (j - 1 == atoms.size()) ? std::set<char> {END_CHAR} : atoms[j-1].get_tokens();
+            for (auto token : tokens) {
+                m.add_transition(i, token, endpoint);
+            }
+        }
     }
 
-    // copy all actions between state + 1 and state + 2
-    int next = state + 2;
-    if (next > m.get_num_states()) {
-        next = m.get_success();
+    if (end <= m.get_num_states()) {
+        return;
     }
-    for (auto& [key, endpoint] : m.get_transition()) {
-        auto [start, token] = key;
-        if (start == state + 1 && endpoint == next) {
-            m.add_transition(state, token, next);
-        }
+    
+    // remap the endchar transitions to success if end is optional
+    for (int i = begin; i < end; ++i) {
+        m.remove_transition(i, END_CHAR);
+        m.add_transition(i, END_CHAR, m.get_success());
+        m.remove_transition(i, m.get_else_action());
+        m.add_transition(i, m.get_else_action(), m.get_success());
     }
 }
 
 void Factory::post_modification(StateMachine& m, const Pattern& pattern) {
-    if (pattern.atoms.size() >= 2) {
-        add_loops_to_second(m, pattern.atoms[0]);
-    }
+    add_all_backloops(m, pattern);
     add_all_optional_chars(m, pattern);
 }
 
@@ -113,25 +120,53 @@ bool is_connected(StateMachine& m, int start, int end, const Atom& atom) {
     return false;
 }
 
-void Factory::add_loops_to_second(StateMachine& m, const Atom& atom) {
-    for (int i = 1; i <= m.get_num_states(); ++i) {
+void Factory::add_backloops(StateMachine& m, const Atom& atom, int state) {
+    for (int i = state; i <= m.get_num_states(); ++i) {
         auto end = (m.get_num_states() == i) ? m.get_success() : i + 1;
         for (char token : atom.get_tokens()) {
             // exclude ones that are connected to the next
             if (!is_connected(m, i, end, atom)) {
-                m.add_transition(i, token, 1);
+                m.add_transition(i, token, state);
             }
         }
     }
+}
+
+bool Factory::is_optional(Modifier mod) {
+    return mod == Modifier::OPTIONAL || mod == Modifier::REPEATED;
 }
 
 void Factory::add_all_optional_chars(StateMachine& m, const Pattern& pattern) {
     // find the positions of all optionals
     // call the make_optional on those states
     auto mods = pattern.modifiers;
-    for (long unsigned i = 0; i < mods.size(); ++i) {
-        if (mods[i] == Modifier::OPTIONAL || mods[i] == Modifier::REPEATED) {
-            make_optional(m, i);
-        }
+    bool counting = false;
+    int j = 0;
+    for (long unsigned int i = 0; i < mods.size(); ++i) {
+        if (is_optional(mods[i]) && !counting) {
+            // start counting
+            counting = true;
+            j = i;
+        } else if (!is_optional(mods[i]) && counting) {
+            // stop counting
+            // add the set of chars
+            counting = false;
+            make_optional(m, pattern.atoms, j, i); // the chars from [j, i) are all optional
+        } // else increment i and continue
+    }
+    // if is current counting, add the remaining optional chars
+    if (counting) {
+        // the chars from [j, mods.size()) are all optional
+        make_optional(m, pattern.atoms, j, mods.size());
+    }
+}
+
+void Factory::add_all_backloops(StateMachine& m, const Pattern& pattern) {
+    add_backloops(m, pattern.atoms[0], 1);
+
+    int i = 1;
+    while (i <= m.get_num_states() && is_optional(pattern.modifiers[i])) {
+        add_backloops(m, pattern.atoms[i], i + 1);
+        ++i;
     }
 }

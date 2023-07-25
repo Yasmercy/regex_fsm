@@ -85,6 +85,40 @@ TEST_CASE ("matching patterns with optional characters", "[RegEx]") {
     REQUIRE (!r16.matched);
 }
 
+TEST_CASE ("matching multiple optionals", "[RegEx]") {
+    RegEx regex{"a?b?c?d"};
+    
+    Result r1 = regex.match("cad");
+    Result r2 = regex.match("cbd");
+    Result r3 = regex.match("bad");
+    Result r4 = regex.match("abcd");
+    Result r5 = regex.match("abd");
+    Result r6 = regex.match("acd");
+    Result r7 = regex.match("bcd");
+    Result r8 = regex.match("ad");
+    Result r9 = regex.match("bd");
+    Result r10 = regex.match("cd");
+    Result r11 = regex.match("d");
+    Result r12 = regex.match("a");
+    Result r13 = regex.match("b");
+    Result r14 = regex.match("c");
+
+    REQUIRE (r1.matched);
+    REQUIRE (r2.matched);
+    REQUIRE (r3.matched);
+    REQUIRE (r4.matched);
+    REQUIRE (r5.matched);
+    REQUIRE (r6.matched);
+    REQUIRE (r7.matched);
+    REQUIRE (r8.matched);
+    REQUIRE (r9.matched);
+    REQUIRE (r10.matched);
+    REQUIRE (r11.matched);
+    REQUIRE (!r12.matched);
+    REQUIRE (!r13.matched);
+    REQUIRE (!r14.matched);
+}
+
 TEST_CASE ("matching patterns with any digit", "[RegEx]") {
     RegEx regex("a\\dc");
 
