@@ -1,4 +1,5 @@
 #include "pattern.h"
+#include <stdexcept>
 
 using Token = char;
 
@@ -39,6 +40,7 @@ std::vector<std::string> Pattern::group_tokens(std::string pattern) {
     for (long unsigned int i = 0; i < pattern.size(); ++i) {
         char c = pattern[i];
         if (c == '\\') {
+            cur.push_back('\\');
             continue;
         } else if (is_start_bracket(c)) {
             in_bracket = true;
@@ -46,7 +48,7 @@ std::vector<std::string> Pattern::group_tokens(std::string pattern) {
             in_bracket = false;
         }
         
-        if (!is_modifier(c)) {
+        if ((!cur.empty() && cur[0] == '\\') || !is_modifier(c)) {
             cur.push_back(c);
         } else if (!out.empty()) {
             // and c is a modifier
@@ -64,7 +66,7 @@ void Pattern::set_modified_atoms(std::vector<std::string>& tokens) {
     // removes the modifier from all tokens that have it
     modifiers.resize(tokens.size());
     for (long unsigned int i = 0; i < tokens.size(); ++i) {
-        if (tokens[i].back() == '?') {
+        if (tokens[i].back() == '?' && tokens[i].front() != '\\') {
             tokens[i].pop_back();
             modifiers[i] = Modifier::OPTIONAL;
         } else if (tokens[i].back() == '*') {
@@ -76,35 +78,37 @@ void Pattern::set_modified_atoms(std::vector<std::string>& tokens) {
 
 void Pattern::set_atoms(const std::vector<std::string>& tokens) {
     for (auto token : tokens) {
-        if (token == "\w") {
+        if (token == "\\w") {
             atoms.push_back(Atom::alphanumeric()); 
-        } else if (token == "\W") {
+        } else if (token == "\\W") {
             atoms.push_back(Atom::not_atom(Atom::alphanumeric()));
-        } else if (token == "\d") {
+        } else if (token == "\\d") {
             atoms.push_back(Atom::digit());
-        } else if (token == "\D") {
+        } else if (token == "\\D") {
             atoms.push_back(Atom::not_atom(Atom::digit()));
-        } else if (token == "\s") {
+        } else if (token == "\\s") {
             atoms.push_back(Atom::whitespace());
-        } else if (token == "\S") {
+        } else if (token == "\\S") {
             atoms.push_back(Atom::not_atom(Atom::whitespace()));
         } else if (token == ".") {
             atoms.push_back(Atom::character());
-        } else if (token == "\.") {
+        } else if (token == "\\.") {
             atoms.push_back(Atom {'.'});
-        } else if (token == "\?") {
+        } else if (token == "\\?") {
             atoms.push_back(Atom {'?'});
-        } else if (token == "\$") {
+        } else if (token == "\\$") {
             atoms.push_back(Atom {'$'});
-        } else if (token == "\^") {
+        } else if (token == "\\^") {
             atoms.push_back(Atom {'^'});
-        } else if (token == "\\") {
+        } else if (token == "\\\\") {
             atoms.push_back(Atom {'\\'});
         } else if (false) {
             // deal with ranges
-        } else {
+        } else if (token.size() == 1) {
             // the token is just a char
             atoms.push_back(Atom {token[0]});
+        } else {
+            throw std::runtime_error("unknown token: " + token);
         }
     }
 }

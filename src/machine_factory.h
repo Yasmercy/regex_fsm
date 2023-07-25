@@ -14,6 +14,7 @@ public:
 
 private:
     void append_atom(StateMachine& m, const Atom& atom);
+    void append_repeated_atom(StateMachine& m, const Atom& atom);
     void post_modification(StateMachine& m, const Pattern& pattern);
     // machines need to connect to the second state
     // for example, ab("aab")

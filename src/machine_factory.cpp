@@ -13,6 +13,10 @@ Machine Factory::match_pattern(const Pattern& pattern) {
     // add all atoms to the machine
     Machine m = match_atom(pattern.atoms[0]);
     for (long unsigned int i = 1; i < pattern.atoms.size(); ++i) {
+        if (pattern.modifiers[i] == Modifier::REPEATED) {
+            append_repeated_atom(m, pattern.atoms[i]);
+            continue;
+        }
         append_atom(m, pattern.atoms[i]);
     }
     
@@ -30,6 +34,15 @@ Machine Factory::match_atom(const Atom& atom) {
     }
     return m;
 }
+
+void Factory::append_repeated_atom(Machine& m, const Atom& atom) {
+    append_atom(m, atom);
+    // add a self loop
+    for (char c : atom.get_tokens()) {
+        m.add_transition(m.get_num_states(), c, m.get_num_states());
+    }
+}
+
 void Factory::append_atom(Machine& m, const Atom& atom) {
     // add another state
     m.increase_num_states_by(1);
@@ -116,7 +129,7 @@ void Factory::add_all_optional_chars(StateMachine& m, const Pattern& pattern) {
     // call the make_optional on those states
     auto mods = pattern.modifiers;
     for (long unsigned i = 0; i < mods.size(); ++i) {
-        if (mods[i] == Modifier::OPTIONAL) {
+        if (mods[i] == Modifier::OPTIONAL || mods[i] == Modifier::REPEATED) {
             make_optional(m, i);
         }
     }

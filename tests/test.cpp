@@ -86,20 +86,20 @@ TEST_CASE ("matching patterns with optional characters", "[RegEx]") {
 }
 
 TEST_CASE ("matching patterns with any digit", "[RegEx]") {
-    // RegEx regex("a\dc");
+    RegEx regex("a\\dc");
 
-    // Result r1 = regex.match("abc");
-    // Result r2 = regex.match("aBc");
-    // Result r3 = regex.match("a0c");
-    // Result r4 = regex.match("a9c");
-    // Result r5 = regex.match("c0a");
-    // 
-    // // checking with expiressions matched
-    // REQUIRE (!r1.matched);
-    // REQUIRE (r2.matched);
-    // REQUIRE (r3.matched);
-    // REQUIRE (!r4.matched);
-    // REQUIRE (r5.matched);
+    Result r1 = regex.match("abc");
+    Result r2 = regex.match("aBc");
+    Result r3 = regex.match("a0c");
+    Result r4 = regex.match("a9c");
+    Result r5 = regex.match("c0a");
+    
+    // checking with expiressions matched
+    REQUIRE (!r1.matched);
+    REQUIRE (!r2.matched);
+    REQUIRE (r3.matched);
+    REQUIRE (r4.matched);
+    REQUIRE (!r5.matched);
 }
 
 TEST_CASE ("matching patterns with any non-digit", "[RegEx]") {
@@ -126,22 +126,36 @@ TEST_CASE ("matching patterns with repetitions", "[RegEx]") {
     REQUIRE (r3.matched);
 }
 
+TEST_CASE ("matching patterns with *", "[RegEx]") {
+    RegEx regex{"ab*"};
+    REQUIRE (regex.match("a").matched);
+    REQUIRE (regex.match("ab").matched);
+    REQUIRE (regex.match("abbbb").matched);
+    REQUIRE (regex.match("abbc").matched);
+    REQUIRE (regex.match("ac").matched);   
+    REQUIRE (!regex.match("c").matched);
+}
+
+TEST_CASE ("matching patterns with +", "[RegEx]") {
+
+}
+
 TEST_CASE ("matching patterns with special charcters", "[RegEx]") {
-    // RegEx regex("\?\.\$");
+    RegEx regex("\\?\\.\\$");
 
-    // Result r1 = regex.match("\?\.\$");
-    // Result r2 = regex.match("?.$");
+    Result r1 = regex.match("\\?\\.\\$");
+    Result r2 = regex.match("?.$");
 
-    // // checking which expressions matched
-    // REQUIRE (!r1.matched);
-    // REQUIRE (r2.matched);
+    // checking which expressions matched
+    REQUIRE (!r1.matched);
+    REQUIRE (r2.matched);
 }
 
 TEST_CASE ("pattern tokenizing", "[group_tokens]") {
-    std::string pattern = "x\d?x[abc]x(a|bc)xa+";
+    std::string pattern = "x\\d?x[abc]x(a|bc)xa+";
     std::vector<std::string> sols = {
         "x",
-        "\d?",
+        "\\d?",
         "x",
         "[abc]",
         "x",

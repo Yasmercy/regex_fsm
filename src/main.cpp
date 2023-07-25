@@ -18,10 +18,10 @@ void write_abc() {
 }
 
 void playground() {
-    RegEx regex{"aa"};
+    RegEx regex{"abc"};
     auto j = regex.get_machine_json();
     std::cout << j["transition"] << std::endl;
-    std::cout << regex.match("aa").matched;
+    std::cout << regex.match("aabc").matched;
 }
 
 int main() {
