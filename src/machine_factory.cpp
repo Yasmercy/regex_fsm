@@ -90,7 +90,21 @@ void Factory::post_modification(StateMachine& m, const Pattern& pattern) {
 }
 
 void Factory::add_loops_to_second(StateMachine& m, const Atom& atom) {
-    for (int i = 1; i <= m.get_num_states(); ++i) {
+    int i = 1;
+    // exclude ones that have a loop to the next state already
+    if (m.get_num_states()) {
+        bool has_loop_to_next;
+        auto end = (m.get_num_states() == 1) ? m.get_success() : 2;
+        for (auto token : atom.get_tokens()) {
+            auto search = m.get_transition().find({1, token});
+            if (search != m.get_transition().end() && search->second == end) {
+                has_loop_to_next = true;
+                break;
+            }
+        }
+        i += has_loop_to_next;
+    }
+    for (;i <= m.get_num_states(); ++i) {
         for (char token : atom.get_tokens()) {
             m.add_transition(i, token, 1);
         }
