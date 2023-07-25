@@ -137,7 +137,20 @@ TEST_CASE ("matching patterns with any digit", "[RegEx]") {
 }
 
 TEST_CASE ("matching patterns with any non-digit", "[RegEx]") {
-
+    RegEx regex("a\\Dc");
+    
+    Result r1 = regex.match("abc");
+    Result r2 = regex.match("aBc");
+    Result r3 = regex.match("a0c");
+    Result r4 = regex.match("a9c");
+    Result r5 = regex.match("c0a");
+    
+    // checking with expiressions matched
+    REQUIRE (r1.matched);
+    REQUIRE (r2.matched);
+    REQUIRE (!r3.matched);
+    REQUIRE (!r4.matched);
+    REQUIRE (!r5.matched);
 }
 
 TEST_CASE ("matching patterns with any .", "[RegEx]") {
@@ -158,6 +171,20 @@ TEST_CASE ("matching patterns with repetitions", "[RegEx]") {
     REQUIRE (!r1.matched);
     REQUIRE (r2.matched);
     REQUIRE (r3.matched);
+}
+
+TEST_CASE ("matching pattern with repetion ranges", "[RegEx]") {
+    RegEx regex("z{2,5}");
+
+    Result r1 = regex.match("wazup");
+    Result r2 = regex.match("wazzup");
+    Result r3 = regex.match("wazzzup");
+    Result r4 = regex.match("wazzzzzup");
+    
+    REQUIRE (!r1.matched);
+    REQUIRE (r2.matched);
+    REQUIRE (r3.matched);
+    REQUIRE (r4.matched);
 }
 
 TEST_CASE ("matching patterns with *", "[RegEx]") {
@@ -208,7 +235,7 @@ TEST_CASE ("repeated tokens", "[repeat_tokens]") {
     };
     std::vector<std::string> sol = {
         "a", "a*",
-        "x", "x?", "x?", "x?", // NOTE THIS DOES NOT WORK
+        "x", "x?", "x?", "x?",
         "y", "y"
     };
 

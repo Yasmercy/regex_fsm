@@ -55,7 +55,6 @@ void Factory::append_atom(Machine& m, const Atom& atom) {
     for (auto& [key, endpoint] : m.get_transition()) {
         auto [start, token] = key;
         if (endpoint == m.get_success()) {
-            m.remove_transition(start, token);
             m.add_transition(start, token, m.get_num_states());
         }
     }
@@ -84,9 +83,13 @@ void Factory::make_optional(StateMachine& m, const std::vector<Atom>& atoms, int
             // for each combination of states (i, j)
             // copy the intermediate transitions of (j-1, j)
             int endpoint = (j > m.get_num_states()) ? m.get_success() : j;
-            auto tokens = (j - 1 == atoms.size()) ? std::set<char> {END_CHAR} : atoms[j-1].get_tokens();
+            long unsigned int k = j - 1;
+            auto tokens = (k == atoms.size()) ? std::set<char> {END_CHAR} : atoms[k].get_tokens();
             for (auto token : tokens) {
-                m.add_transition(i, token, endpoint);
+                if (m.get_transition().count({i, token}) == 0) {
+                    m.add_transition(i, token, endpoint);
+                }
+
             }
         }
     }
@@ -97,9 +100,7 @@ void Factory::make_optional(StateMachine& m, const std::vector<Atom>& atoms, int
     
     // remap the endchar transitions to success if end is optional
     for (int i = begin; i < end; ++i) {
-        m.remove_transition(i, END_CHAR);
         m.add_transition(i, END_CHAR, m.get_success());
-        m.remove_transition(i, m.get_else_action());
         m.add_transition(i, m.get_else_action(), m.get_success());
     }
 }

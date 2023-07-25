@@ -141,6 +141,7 @@ std::vector<std::string> Pattern::extend_repeated_tokens(
                 for (int i = 0; i < n-m; ++i) {
                     out.push_back(last);
                 }
+                continue;
             }
             // if it has 1 index
             // the number would be the enitre substring inside brackets

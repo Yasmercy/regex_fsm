@@ -18,11 +18,10 @@ void write_abc() {
 }
 
 void playground() {
-    RegEx regex{"a?bc"};
+    RegEx regex{"z{2,5}"};
     auto j = regex.get_machine_json();
     std::cout << j["transition"] << std::endl;
-   
-    regex.match("bc");
+    regex.match("zzzzz");        
 }
 
 int main() {
