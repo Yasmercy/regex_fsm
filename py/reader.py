@@ -1,5 +1,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+import functools as ft
+import itertools as it
 import json
 
 
@@ -10,19 +12,25 @@ def read_json(filename):
 
 def parse_json(j):
     """ Reads the json data and returns the nodelist and edge_list """
-    nodes = set(range(-2, j["num_states"] + 1))
-    edges = {tuple(k): v for [k, v] in j["transition"]}
-    return nodes, edges
+    start = j["start"]["id"]
+    terminals = [term["id"] for term in j["terminals"]]
+    transitions = {
+        (transition[0][0]["id"], transition[0][1]) : tuple((endpoint["id"] for endpoint in transition[1]))
+        for transition in j["transition"]
+    }
+    return transitions
 
 
-def draw_graph(nodes, edges):
+def draw_graph(edges):
     """
     Returns a nx.DiGraph() object with the nodes and edges
     (as well as some labels)
     """
     # key=start, value=end
     # add the proper labels for the edges
-    E_labels = {(k[0], v): k[1] for k, v in edges.items()}
+    E_labels = [{(k[0], vi): k[1] for vi in v} for k, v in edges.items()]
+    E_labels = ft.reduce(lambda a, b: {**a, **b}, E_labels)
+    nodes = set(it.chain.from_iterable(E_labels.keys()))
 
     # create the graph
     G = nx.DiGraph()
@@ -43,12 +51,11 @@ def show_graph():
 
 
 def main():
-    data = read_json("fsm/abc_.json")
+    data = read_json("dump.json")
     parsed = parse_json(data)
-    draw_graph(*parsed)
+    draw_graph(parsed)
     show_graph()
 
 
 if __name__ == "__main__":
     main()
-
