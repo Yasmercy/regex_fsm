@@ -50,6 +50,10 @@ private:
     // helper functions
     void insert_transition(State start, State end, Symbol action);
     State backtrack(const std::vector<Symbol>& input, State cur, std::size_t input_index);
+    std::set<State> parent_epsilon(const State& cur);
+    std::set<State> parent(const State& cur);
+    void prune_epsilon_helper(const State& cur);
+    std::set<Symbol> get_all_actions(const State& cur);
 
     // fields
     std::map<std::pair<State, Symbol>, std::set<State>> transition;

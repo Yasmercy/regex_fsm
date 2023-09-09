@@ -85,72 +85,72 @@ void NFA::prune_epsilon() {
     // can be replaced by the transitions that are in the next node
     // essentially condensing the NFA
 
-    // loop while there are epsilon states left
-    // this is never an infinite loop because each iteration
-    // strictly decreases the number of epsilon nodes
-    // (there are no cycles)
-    while (true) {
-        // find all epsilon transitions
-        std::map<std::pair<State, Symbol>, std::set<State>> epsilons;
-        for (const auto& [key, value] : transition) {
-            if (key.second == Epsilon) {
-                epsilons[key] = value;
-            }
-        }
+    for (const auto& terminal : terminals) {
+        prune_epsilon_helper(terminal);
+    }
+}
 
-        if (epsilons.empty()) {
-            break;
-        }
-
-        // to all nodes with outgoing epsilon transitions
-        // insert all the transitions of the next
-        for (const auto& [key, value] : epsilons) {
-            transition.erase(key);
-
-            // copy all outgoing transitions starting at value
-            // to the current
-            for (const auto& state : value) {
-                if (key.first == start) {
-                    start = state;
-                }
-
-                if (is_terminal(state)) {
-                    terminals.push_back(key.first);
-                }
-
-                for (const auto& [k, v] : transition) {
-                    if (k.first == state) {
-                        for (auto& end : v) {
-                            insert_transition(key.first, end, k.second);
-                        }
-                    }
-                }
-            }
-            std::cout << key.first.id << " " << key.second << "\n";
+std::set<State> NFA::parent_epsilon(const State& cur) {
+    std::set<State> out;
+    for (const auto& [key, val] : transition) {
+        if (const auto search = val.find(cur); key.second == Epsilon && search != val.end()) {
+            out.insert(key.first);
         }
     }
+    return out;
+}
 
-    // remove all unreachable nodes
-    // prune_unreachable();
+std::set<State> NFA::parent(const State& cur) {
+    std::set<State> out;
+    for (const auto& [key, val] : transition) {
+        if (const auto search = val.find(cur); search != val.end()) {
+            out.insert(key.first);
+        }
+    }
+    return out;
+}
+
+std::set<Symbol> NFA::get_all_actions(const State& cur) {
+    std::set<Symbol> out;
+    for (const auto& [key, _] : transition) {
+        if (key.first == cur) {
+            out.insert(key.second);
+        }
+    }
+    return out;
+}
+
+void NFA::prune_epsilon_helper(const State& v2) {
+    // find all nodes v1 that have an epsilon to v2
+    // remove the connection v1-v2
+    // for each out connection c of cur:
+    // add connection to v1
+    // if v2 is a final, then v1 is final
+    // recurse backwards across each v1
+    
+    auto parents = parent_epsilon(v2);
+    for (const auto v1 : parents) {
+        if (is_terminal(v2)) {
+            terminals.push_back(v1);
+        }
+
+        auto actions = get_all_actions(v2);
+        for (const auto action : actions) {
+            std::set<State> transitions = transition[{v2, action}];
+            transition[{v1, action}].insert(transitions.begin(), transitions.end());
+        }
+        
+        transition[{v1, Epsilon}].erase(v2);
+    }
+
+    // for (const auto& v1 : parent(v2)) {
+    //     prune_epsilon_helper(v1);
+    // }
 }
 
 void NFA::prune_unreachable() {
-    std::set<State> reached = {start};
-    for (const auto& [_, v] : transition) {
-        reached.insert(v.begin(), v.end());
-    }
-
-    // remove all entries of map with an unreachable state
-    std::set<std::pair<State, Symbol>> unreachable;
-    for (const auto& [k, v] : transition) {
-        if (auto search = reached.find(k.first); search == reached.end()) {
-            unreachable.insert(k);
-        }
-    }
-
-    for (auto& k : unreachable) {
-        transition.erase(k);
-    }
+    // do a dfs, collecting reached states
+    // prune all that arent reached
 }
 
 State NFA::backtrack(const std::vector<Symbol>& input, State cur, std::size_t input_index) {
