@@ -31,6 +31,9 @@ void NFA::kleene_star() {
         insert_transition(terminal, new_end, Epsilon);
     }
 
+    // connect new_start and new_end
+    insert_transition(new_start, new_end, Epsilon);
+
     // update start and end
     start = new_start;
     terminals = { new_end };
@@ -71,6 +74,48 @@ void NFA::alternation(NFA&& other) {
     // update start and end
     start = new_start;
     terminals = { new_end };
+}
+
+bool NFA::is_terminal(const State& state) {
+    return std::find(terminals.begin(), terminals.end(), state) != terminals.end();
+}
+
+State NFA::backtrack(const std::vector<Symbol>& input, State cur, std::size_t input_index) {
+    // base case 1: reached end state
+    if (is_terminal(cur)) {
+        return cur;
+    }
+
+    // feed forward (non-consuming)
+    for (const auto& n : transition[{cur, Epsilon}]) {
+        // don't consume an input
+        State f = backtrack(input, n, input_index);
+        if (is_terminal(f)) {
+            return f;
+        }
+    }
+
+    // base case 2: reached end of inputs
+    if (input_index == input.size()) {
+        return cur;
+    }
+
+    // feed forward,(consuming) 
+    for (const auto& n : transition[{cur, input[input_index]}]) {
+        // consume an input
+        State f = backtrack(input, n, input_index + 1);
+        if (is_terminal(f)) {
+            return f;
+        }
+    }
+
+    // no way to reach a terminal state
+    return cur;
+}
+
+State NFA::simulate(const std::string& input) {
+    std::vector<Symbol> chars(input.begin(), input.end());
+    return backtrack(chars, start, 0);
 }
 
 void NFA::insert_transition(State start, State end, Symbol action) {
@@ -164,7 +209,6 @@ NFA build_trivial(const std::vector<Token>& tokens) {
         if (const char* val = std::get_if<char>(&token)) {
             out = NFA{*val};
         } else {
-            std::cout << "hi\n";
             out.kleene_star();
         }
     }

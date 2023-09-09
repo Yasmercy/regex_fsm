@@ -33,14 +33,22 @@ public:
     void concat(NFA&& other);
     void alternation(NFA&& other);
 
-    // for simulation of the NFA across an input string
-    // in O(2^n) time, backtracking
-    State simulate(const std::vector<Symbol>& input);
+    // simplying the NFA into one without any epsilon transitions
+    void prune_epsilon();
     
+    // determining whether an output state is accepting
+    bool is_terminal(const State& state);
+
+    // for simulation of the NFA across an input string
+    // the matched string must start at the beginning of input
+    // in O(2^n) time, backtracking
+    State simulate(const std::string& input);
+
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(NFA, transition, terminals, start);
 private:
     // helper functions
     void insert_transition(State start, State end, Symbol action);
+    State backtrack(const std::vector<Symbol>& input, State cur, std::size_t input_index);
 
     // fields
     std::map<std::pair<State, Symbol>, std::set<State>> transition;
