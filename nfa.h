@@ -33,8 +33,9 @@ public:
     void concat(NFA&& other);
     void alternation(NFA&& other);
 
-    // simplying the NFA into one without any epsilon transitions
+    // pruning
     void prune_epsilon();
+    void prune_unreachable();
     
     // determining whether an output state is accepting
     bool is_terminal(const State& state);

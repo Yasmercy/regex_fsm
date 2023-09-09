@@ -8,6 +8,9 @@
 
 class DFA {
 public:
+    DFA(const NFA& nfa);
+    DFA(const std::string& pattern);
+
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(DFA, transition, terminals, start);
 private:
     // fields

@@ -4,7 +4,9 @@
 #include <fstream>
 
 int main() {
-    NFA machine("(a|b)|(cd*)");
+    // NFA machine("(a|b)|(cd*)");
+    NFA machine("a|b");
+    machine.prune_epsilon();
     // NFA machine("b|a*");
 
     std::ofstream o("dump.json");

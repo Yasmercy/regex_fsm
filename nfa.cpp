@@ -80,6 +80,79 @@ bool NFA::is_terminal(const State& state) {
     return std::find(terminals.begin(), terminals.end(), state) != terminals.end();
 }
 
+void NFA::prune_epsilon() {
+    // any outgoing epsilon transition
+    // can be replaced by the transitions that are in the next node
+    // essentially condensing the NFA
+
+    // loop while there are epsilon states left
+    // this is never an infinite loop because each iteration
+    // strictly decreases the number of epsilon nodes
+    // (there are no cycles)
+    while (true) {
+        // find all epsilon transitions
+        std::map<std::pair<State, Symbol>, std::set<State>> epsilons;
+        for (const auto& [key, value] : transition) {
+            if (key.second == Epsilon) {
+                epsilons[key] = value;
+            }
+        }
+
+        if (epsilons.empty()) {
+            break;
+        }
+
+        // to all nodes with outgoing epsilon transitions
+        // insert all the transitions of the next
+        for (const auto& [key, value] : epsilons) {
+            transition.erase(key);
+
+            // copy all outgoing transitions starting at value
+            // to the current
+            for (const auto& state : value) {
+                if (key.first == start) {
+                    start = state;
+                }
+
+                if (is_terminal(state)) {
+                    terminals.push_back(key.first);
+                }
+
+                for (const auto& [k, v] : transition) {
+                    if (k.first == state) {
+                        for (auto& end : v) {
+                            insert_transition(key.first, end, k.second);
+                        }
+                    }
+                }
+            }
+            std::cout << key.first.id << " " << key.second << "\n";
+        }
+    }
+
+    // remove all unreachable nodes
+    // prune_unreachable();
+}
+
+void NFA::prune_unreachable() {
+    std::set<State> reached = {start};
+    for (const auto& [_, v] : transition) {
+        reached.insert(v.begin(), v.end());
+    }
+
+    // remove all entries of map with an unreachable state
+    std::set<std::pair<State, Symbol>> unreachable;
+    for (const auto& [k, v] : transition) {
+        if (auto search = reached.find(k.first); search == reached.end()) {
+            unreachable.insert(k);
+        }
+    }
+
+    for (auto& k : unreachable) {
+        transition.erase(k);
+    }
+}
+
 State NFA::backtrack(const std::vector<Symbol>& input, State cur, std::size_t input_index) {
     // base case 1: reached end state
     if (is_terminal(cur)) {
@@ -263,4 +336,3 @@ NFA::NFA(std::string pattern) {
     std::reverse(tokens.begin(), tokens.end());
     *this = build_nfa(tokens);
 }
-
