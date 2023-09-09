@@ -110,7 +110,7 @@ std::set<State> NFA::parent(const State& cur) {
     return out;
 }
 
-std::set<Symbol> NFA::get_all_actions(const State& cur) {
+std::set<Symbol> NFA::get_all_actions(const State cur) {
     std::set<Symbol> out;
     for (const auto& [key, _] : transition) {
         if (key.first == cur) {
@@ -123,29 +123,21 @@ std::set<Symbol> NFA::get_all_actions(const State& cur) {
 void NFA::prune_epsilon_helper(const State& v2) {
     // find all nodes v1 that have an epsilon to v2
     // remove the connection v1-v2
-    // for each out connection c of cur:
-    // add connection to v1
     // if v2 is a final, then v1 is final
     // recurse backwards across each v1
-    
-    auto parents = parent_epsilon(v2);
-    for (const auto v1 : parents) {
+    // for each out connection c of cur:
+    // add connection to v1
+    for (State v1 : parent_epsilon(v2)) {
+        transition[{v1, Epsilon}].erase(v2);
         if (is_terminal(v2)) {
             terminals.push_back(v1);
         }
-
         auto actions = get_all_actions(v2);
-        for (const auto action : actions) {
-            std::set<State> transitions = transition[{v2, action}];
-            transition[{v1, action}].insert(transitions.begin(), transitions.end());
+        for (const auto& action : actions) {
+            std::set<State> connections = transition[{v2, action}];
+            transition[{v1, action}].merge(connections);
         }
-        
-        transition[{v1, Epsilon}].erase(v2);
     }
-
-    // for (const auto& v1 : parent(v2)) {
-    //     prune_epsilon_helper(v1);
-    // }
 }
 
 void NFA::prune_unreachable() {
