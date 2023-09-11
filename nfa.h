@@ -53,7 +53,7 @@ private:
     std::set<State> parent_epsilon(const State& cur);
     std::set<State> parent(const State& cur);
     void prune_epsilon_helper(const State& cur);
-    std::set<Symbol> get_all_actions(const State cur);
+    std::set<Symbol> get_all_actions(const State& cur);
 
     // fields
     std::map<std::pair<State, Symbol>, std::set<State>> transition;
