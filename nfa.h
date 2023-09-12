@@ -35,6 +35,7 @@ public:
 
     // pruning
     NFA without_epsilon();
+    NFA to_dfa();
     void prune_unreachable();
     
     // determining whether an output state is accepting
@@ -55,6 +56,8 @@ private:
     void insert_transition(State start, State end, Symbol action);
     State backtrack(const std::vector<Symbol>& input, State cur, std::size_t input_index);
     std::set<State> epsilon_closure(const State& state);
+    std::map<Symbol, std::set<State>> closure(const State& state);
+    void closure_helper(const State& cur, Symbol consumed, std::map<Symbol, std::set<State>>& set);
     std::set<Symbol> get_all_actions(const State& state);
     std::set<State> get_all_states() const;
 

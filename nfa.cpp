@@ -276,6 +276,9 @@ std::set<Symbol> NFA::get_all_actions(const State& cur) {
 }
 
 void NFA::prune_unreachable() {
+    // collect all used transitions with a dfs
+    // set as new transitions
+
     // collect all the reachable states with a dfs from start
     std::set<State> reachable;
     std::set<State> stack = {start};
@@ -420,4 +423,100 @@ std::set<State> NFA::get_all_states() const {
         out.merge(endpoints);
     }
     return out;
+}
+
+std::map<Symbol, std::set<State>> NFA::closure(const State& state) {
+    // get all states within 1 consuming state
+    std::map<Symbol, std::set<State>> out = {{Epsilon, {state}}};
+    closure_helper(state, Epsilon, out);
+    return out;
+}
+
+void NFA::closure_helper(const State& cur, Symbol consumed, std::map<Symbol, std::set<State>>& map) {
+    // iterate through all neighbors and recursive iterate
+    for (auto action : get_all_actions(cur)) {
+        if (consumed != Epsilon && action != Epsilon) {
+            continue;
+        }
+        Symbol cons = (action == Epsilon) ? consumed : action;
+
+        const auto& neighbors = transition[{cur, action}];
+        for (const auto& neighbor : neighbors) {
+            if (auto search = map[cons].find(neighbor); search == map[cons].end()) {
+                map[cons].insert(neighbor);
+                closure_helper(neighbor, cons, map);
+            }
+        }
+    }
+}
+
+NFA NFA::to_dfa() {
+    std::map<std::pair<State, Symbol>, std::set<State>> new_transition;
+    // the new states corresponding to a subset
+    std::vector<State> new_states;
+    std::vector<std::set<State>> subsets;
+    // all the *reached* subsets
+    std::vector<std::set<State>> seen;
+    // current state (representing a subset in seen)
+    int cur = 0;
+
+    // initialize starts
+    new_states.emplace_back();
+    auto new_start = new_states[0];
+    subsets.push_back(epsilon_closure(start));
+    std::vector<int> stack {cur};
+
+    // do construction
+    while (!stack.empty()) {
+        cur = stack.back();
+        stack.pop_back();
+
+        seen.push_back(subsets[cur]);
+
+        std::map<Symbol, std::set<State>> subset;
+        for (const auto& state : subsets[cur]) {
+            auto c = closure(state);
+            for (auto& [key, value] : c) {
+                subset[key].merge(value);
+            }
+        }
+
+        for (const auto& [action, set] : subset) {
+            // ignore epsilon closure
+            if (action == Epsilon) {
+                continue;
+            }
+
+            // add to subsets if new
+            // find index
+            auto it = std::find(subsets.begin(), subsets.end(), set);
+            int index = std::distance(subsets.begin(), it);
+            if (it == subsets.end()) {
+                index = subsets.size();
+                subsets.push_back(set);
+                new_states.emplace_back();
+            }
+
+            // add to transition
+            new_transition[{new_states[cur], action}].insert(new_states[index]);
+            // add to stack (if not seen) 
+            if (auto search = std::find(seen.begin(), seen.end(), set); search == seen.end()) {
+                stack.push_back(index);
+            }
+        }
+    }
+
+    // set terminals
+    std::vector<State> new_terminals;
+    for (std::size_t i = 0; i < new_states.size(); ++i) {
+        for (auto terminal : terminals) {
+            if (auto search = subsets[i].find(terminal); search != subsets[i].end()) {
+                new_terminals.push_back(new_states[i]);
+                break;
+            }
+        }
+    }
+
+    // return
+    return NFA(new_transition, new_terminals, new_start);
 }
