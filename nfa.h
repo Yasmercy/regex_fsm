@@ -34,11 +34,11 @@ public:
     void alternation(NFA&& other);
 
     // pruning
-    void prune_epsilon();
+    NFA without_epsilon();
     void prune_unreachable();
     
     // determining whether an output state is accepting
-    bool is_terminal(const State& state);
+    bool is_terminal(const State& state) const;
 
     // for simulation of the NFA across an input string
     // the matched string must start at the beginning of input
@@ -47,13 +47,16 @@ public:
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(NFA, transition, terminals, start);
 private:
+    // record-style constructor
+    NFA(std::map<std::pair<State, Symbol>, std::set<State>> transition, std::vector<State> terminals, State start) 
+        : transition(transition), terminals(terminals), start(start) {}
+
     // helper functions
     void insert_transition(State start, State end, Symbol action);
     State backtrack(const std::vector<Symbol>& input, State cur, std::size_t input_index);
-    std::set<State> parent_epsilon(const State& cur);
-    std::set<State> parent(const State& cur);
-    void prune_epsilon_helper(const State& cur);
-    std::set<Symbol> get_all_actions(const State& cur);
+    std::set<State> epsilon_closure(const State& state);
+    std::set<Symbol> get_all_actions(const State& state);
+    std::set<State> get_all_states() const;
 
     // fields
     std::map<std::pair<State, Symbol>, std::set<State>> transition;

@@ -5,8 +5,8 @@
 
 int main() {
     // NFA machine("(a|b)|(cd*)");
-    NFA machine("a*");
-    machine.prune_epsilon();
+    NFA machine("a*b|c");
+    machine = machine.without_epsilon();
 
     std::ofstream o("dump.json");
     nlohmann::json j = machine;

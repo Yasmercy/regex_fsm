@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <iterator>
 #include <iostream>
 #include "nfa.h"
 #include "parser.h"
@@ -76,7 +77,7 @@ void NFA::alternation(NFA&& other) {
     terminals = { new_end };
 }
 
-bool NFA::is_terminal(const State& state) {
+bool NFA::is_terminal(const State& state) const {
     return std::find(terminals.begin(), terminals.end(), state) != terminals.end();
 }
 
@@ -264,67 +265,6 @@ NFA::NFA(std::string pattern) {
     *this = build_nfa(tokens);
 }
 
-void NFA::prune_epsilon() {
-    const auto terminals_copy = terminals;
-    for (const auto& terminal : terminals_copy) {
-        prune_epsilon_helper(terminal);
-    }
-    prune_unreachable();
-}
-
-void NFA::prune_epsilon_helper(const State& cur) {
-    // prev --e-- cur
-    // add al of cur's connections to prev
-    // set prev to final if cur is final
-    // delete the epsilon transition
-    // continue recursing down prev
-
-    const std::set<State> prevs = parent_epsilon(cur);
-    const std::set<Symbol> actions = get_all_actions(cur);
-    std::set<State> next = parent(cur);
-    next.insert(prevs.begin(), prevs.end());
-
-    for (const auto& prev : prevs) {
-        // add connections
-        for (const auto& action : actions) {
-            auto endpoints = transition[{cur, action}];
-            transition[{prev, action}].merge(endpoints);
-        }
-
-        // set terminal
-        if (is_terminal(cur)) {
-            terminals.push_back(prev);
-        }
-        // delete epsilon transition
-        transition[{prev, Epsilon}].erase(cur);
-    }
-
-    // recurse
-    for (const auto& n : next) {
-        prune_epsilon_helper(n);
-    }
-}
-
-std::set<State> NFA::parent_epsilon(const State& cur) {
-    std::set<State> out;
-    for (const auto& [key, value] : transition) {
-        if (const auto search = value.find(cur); search != value.end() && key.second == Epsilon) {
-            out.insert(key.first);
-        }
-    }
-    return out;
-}
-
-std::set<State> NFA::parent(const State& cur) {
-    std::set<State> out;
-    for (const auto& [key, value] : transition) {
-        if (const auto search = value.find(cur); search != value.end()) {
-            out.insert(key.first);
-        }
-    }
-    return out;
-}
-
 std::set<Symbol> NFA::get_all_actions(const State& cur) {
     std::set<Symbol> out;
     for (const auto& [key, _] : transition) {
@@ -363,4 +303,121 @@ void NFA::prune_unreachable() {
             transition.erase(key);
         }
     }
+
+    std::vector<State> new_terminals;
+    for (auto terminal : terminals) {
+        if (auto search = reachable.find(terminal); search != reachable.end()) {
+            new_terminals.push_back(terminal);
+        }
+    }
+    terminals = new_terminals;
+}
+
+NFA NFA::without_epsilon() {
+    // iterates through the tree, creating epsilon components
+    std::vector<std::set<State>> e_closures;
+    std::set<State> all_states = get_all_states();
+    for (const auto& state : all_states) {
+        std::set<State> closure = epsilon_closure(state);
+        if (auto search = std::find(e_closures.begin(), e_closures.end(), closure); search == e_closures.end()) {
+            e_closures.push_back(closure);
+        }
+    }
+    
+    // create a corresponding state for each e_closure
+    std::vector<State> states(e_closures.size());
+
+    // create the transition function by unionizing all non-epsilon transitions
+    std::map<std::pair<State, Symbol>, std::set<State>> new_transition;
+
+    for (const auto& [key, value] : transition) {
+        if (key.second == Epsilon) {
+            continue;
+        }
+
+        // set of closures containing key.first
+        std::vector<int> starts;
+        for (std::size_t i = 0; i < e_closures.size(); ++i) {
+            if (const auto& search = e_closures[i].find(key.first); search != e_closures[i].end()) {
+                starts.push_back(i);
+            }
+        }
+
+        // set of closures containing any value
+        std::vector<int> ends;
+        for (std::size_t i = 0; i < e_closures.size(); ++i) {
+            for (const auto& v : value) {
+                if (const auto& search = e_closures[i].find(v); search != e_closures[i].end()) {
+                    ends.push_back(i);
+                    break;
+                }
+            }
+        }
+
+        // connect all
+        for (int s : starts) {
+            for (int e : ends) {
+                new_transition[{states[s], key.second}].insert(states[e]);
+            }
+        }
+    }
+
+    // find the terminals
+    std::vector<State> new_terminals;
+    int index = 0;
+    for (const auto& closure : e_closures) {
+        for (const auto terminal : terminals) {
+            if (auto search = closure.find(terminal); search != closure.end()) {
+                new_terminals.push_back(states[index]);
+                break;
+            }
+        }
+        index++;
+    }
+
+    // find index of start
+    int start_index = 0;
+    for (auto state : all_states) {
+        if (state == start) {
+            break;
+        }
+        ++start_index;
+    }
+    
+    // return new NFA
+    NFA out (new_transition, new_terminals, states[start_index]);
+    out.prune_unreachable();
+    return out;
+}
+
+std::set<State> NFA::epsilon_closure(const State& state) {
+    // finds the epsilon closure
+    std::set<State> out;
+    
+    // does a dfs to find all neighbors
+    // invariant: out intersect stack = empty
+    std::vector<State> stack = {state};
+    while (!stack.empty()) {
+        State cur = stack.back();
+        stack.pop_back();
+        out.insert(cur);
+
+        std::vector<State> neighbors;
+        // add all neighbors in cur (that aren't in out)
+        std::set<State> next = transition[{cur, Epsilon}];
+        std::set_difference(next.begin(), next.end(), out.begin(), out.end(), std::inserter(neighbors, neighbors.end()));
+        stack.insert(stack.end(), neighbors.begin(), neighbors.end());
+    }
+
+    return out;
+}
+
+std::set<State> NFA::get_all_states() const {
+    std::set<State> out;
+    for (const auto& [key, value] : transition) {
+        out.insert(key.first);
+        std::set<State> endpoints = value;
+        out.merge(endpoints);
+    }
+    return out;
 }

@@ -37,7 +37,8 @@ def draw_graph(edges):
     G.add_nodes_from(nodes)
     G.add_edges_from(E_labels.keys())
     # draw the graph
-    pos = nx.spectral_layout(G)
+    # pos = nx.spectral_layout(G)
+    pos = nx.kamada_kawai_layout(G)
     # remove overlapping pos
     nx.draw_networkx(G, pos=pos, connectionstyle='arc3, rad = 0.1', arrows=True, with_labels=True)
     nx.draw_networkx_edge_labels(G, pos=pos, edge_labels=E_labels, label_pos=0.8, font_size=8) 
